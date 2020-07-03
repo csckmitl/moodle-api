@@ -105,17 +105,6 @@ routes.post('/course/:courseShortName/enrol/students', async (req, res, next) =>
     }
 
     const courseId = courseDetail.data.courses[0].id
-    // enrolUser(5, 'email', 1)
-    // Promise.all()
-    // let a = [0, 1, 2, 3, 4, 5]
-    // await Promise.all(
-    //     a.map(async element => {
-    //         return setTimeout(async () => {
-    //             await console.log(`Completed in`)
-    //         }, 1000)
-    //     }),
-    // )
-    // console.log(2222)
 
     req.body.user.forEach(email => {
         enrolUser(5, email, courseId)
