@@ -131,7 +131,6 @@ routes.post('/course/:courseShortName/enrol/teachers', async (req, res, next) =>
     const courseId = courseDetail.data.courses[0].id
 
     req.body.user.forEach(email => {
-        // console.log(element)
         enrolUser(3, email, courseId)
     })
 
