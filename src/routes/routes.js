@@ -18,7 +18,11 @@ const errorHandle = (status, data) => {
     return err
 }
 
-// const response
+const response = {
+    successes: [],
+    errors: [],
+    errorDetails: []
+}
 
 routes.get('/', [check('test', 'invalid').exists()], async (req, res, next) => {
     const errors = validationResult(req)
@@ -74,7 +78,7 @@ routes.post(
         paramsCreateCourse.append('courses[0][defaultgroupingid]', 0) // = int
         paramsCreateCourse.append('courses[0][enablecompletion]', 1) // = int
         paramsCreateCourse.append('courses[0][completionnotify]', 0) // = int
-        // paramsCreateCourse.append('courses[0][lang]', req.body.lang) // = string
+        paramsCreateCourse.append('courses[0][lang]', req.body.lang) // = string
         // paramsCreateCourse.append('courses[0][forcetheme]', '') // = string
         // paramsCreateCourse.append('courses[0][courseformatoptions][0][name]', '') // = string
         // paramsCreateCourse.append('courses[0][courseformatoptions][0][value]', '') // = string
