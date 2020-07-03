@@ -57,33 +57,33 @@ routes.post(
         paramsCreateCourse.append('wsfunction', 'core_course_create_courses')
         paramsCreateCourse.append('moodlewsrestformat', MOODLE_FORMAT)
 
-        paramsCreateCourse.append('courses[0][fullname]', req.body.fullName) // = string
-        paramsCreateCourse.append('courses[0][shortname]', req.body.shortName) // = string
-        paramsCreateCourse.append('courses[0][categoryid]', 1) // = int
-        paramsCreateCourse.append('courses[0][idnumber]', '') // = string
-        paramsCreateCourse.append('courses[0][summary]', '') // = string
-        paramsCreateCourse.append('courses[0][summaryformat]', 1) // = int
-        paramsCreateCourse.append('courses[0][format]', 'topics') // = string
-        paramsCreateCourse.append('courses[0][showgrades]', 1) // = int
-        paramsCreateCourse.append('courses[0][newsitems]', 5) // = int
-        paramsCreateCourse.append('courses[0][startdate]', startDate) // = int
-        paramsCreateCourse.append('courses[0][enddate]', stopDate) // = int
-        paramsCreateCourse.append('courses[0][numsections]', 4) // = int
-        paramsCreateCourse.append('courses[0][maxbytes]', 0) // = int
-        paramsCreateCourse.append('courses[0][showreports]', 0) // = int
-        paramsCreateCourse.append('courses[0][visible]', 1) // = int
-        paramsCreateCourse.append('courses[0][hiddensections]', 0) // = int
-        paramsCreateCourse.append('courses[0][groupmode]', 0) // = int
-        paramsCreateCourse.append('courses[0][groupmodeforce]', 0) // = int
-        paramsCreateCourse.append('courses[0][defaultgroupingid]', 0) // = int
-        paramsCreateCourse.append('courses[0][enablecompletion]', 1) // = int
-        paramsCreateCourse.append('courses[0][completionnotify]', 0) // = int
-        paramsCreateCourse.append('courses[0][lang]', req.body.lang) // = string
-        // paramsCreateCourse.append('courses[0][forcetheme]', '') // = string
-        // paramsCreateCourse.append('courses[0][courseformatoptions][0][name]', '') // = string
-        // paramsCreateCourse.append('courses[0][courseformatoptions][0][value]', '') // = string
-        // paramsCreateCourse.append('courses[0][customfields][0][shortname]', '') // = string
-        // paramsCreateCourse.append('courses[0][customfields][0][value]', '') // = string
+        paramsCreateCourse.append('courses[0][fullname]', req.body.fullName) // string
+        paramsCreateCourse.append('courses[0][shortname]', req.body.shortName) // string
+        paramsCreateCourse.append('courses[0][categoryid]', 1) // int
+        paramsCreateCourse.append('courses[0][idnumber]', '') // string
+        paramsCreateCourse.append('courses[0][summary]', '') // string
+        paramsCreateCourse.append('courses[0][summaryformat]', 1) // int
+        paramsCreateCourse.append('courses[0][format]', 'topics') // string
+        paramsCreateCourse.append('courses[0][showgrades]', 1) // int
+        paramsCreateCourse.append('courses[0][newsitems]', 5) // int
+        paramsCreateCourse.append('courses[0][startdate]', startDate) // int
+        paramsCreateCourse.append('courses[0][enddate]', stopDate) // int
+        paramsCreateCourse.append('courses[0][numsections]', 4) // int
+        paramsCreateCourse.append('courses[0][maxbytes]', 0) // int
+        paramsCreateCourse.append('courses[0][showreports]', 0) // int
+        paramsCreateCourse.append('courses[0][visible]', 1) // int
+        paramsCreateCourse.append('courses[0][hiddensections]', 0) // int
+        paramsCreateCourse.append('courses[0][groupmode]', 0) // int
+        paramsCreateCourse.append('courses[0][groupmodeforce]', 0) // int
+        paramsCreateCourse.append('courses[0][defaultgroupingid]', 0) // int
+        paramsCreateCourse.append('courses[0][enablecompletion]', 1) // int
+        paramsCreateCourse.append('courses[0][completionnotify]', 0) // int
+        paramsCreateCourse.append('courses[0][lang]', req.body.lang) // string
+        // paramsCreateCourse.append('courses[0][forcetheme]', '') // string
+        // paramsCreateCourse.append('courses[0][courseformatoptions][0][name]', '') // string
+        // paramsCreateCourse.append('courses[0][courseformatoptions][0][value]', '') // string
+        // paramsCreateCourse.append('courses[0][customfields][0][shortname]', '') // string
+        // paramsCreateCourse.append('courses[0][customfields][0][value]', '') // string
         const data = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsCreateCourse)
         res.json(data.data)
     },
@@ -118,7 +118,6 @@ routes.post('/course/:courseShortName/enrol/students', async (req, res, next) =>
     // console.log(2222)
 
     req.body.user.forEach(email => {
-        // console.log(element)
         enrolUser(5, email, courseId)
     })
 
