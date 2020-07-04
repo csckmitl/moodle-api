@@ -8,7 +8,7 @@ const routes = Router()
 const { MOODLE_BASE_URL } = process.env
 const MOODLE_TOKEN = '1398f75a226fa8cf9ed47902b8fd1a5e'
 const MOODLE_FORMAT = 'json'
-const API_BASE_URL = 'http://192.168.106.132/moodle'
+const API_BASE_URL = 'http://192.168.251.129/moodle'
 
 const errorHandle = (status, data) => {
     const err = new Error()
@@ -18,10 +18,12 @@ const errorHandle = (status, data) => {
     return err
 }
 
-const response = {
-    successes: [],
-    errors: [],
-    errorDetails: []
+const response = (successes, errors, errorDetails) => {
+    return {
+        successes: successes,
+        errors: errors,
+        errorDetails: errorDetails
+    }
 }
 
 routes.get('/', [check('test', 'invalid').exists()], async (req, res, next) => {
@@ -101,7 +103,7 @@ routes.post('/course/:courseShortName/enrol/students', async (req, res, next) =>
 
     if (!courseDetail.data.courses[0]) {
         res.statusCode = 404
-        return res.json({ error: 'Course not found' })
+        return res.json(response(null, [req.params.courseShortName], ["Course not found"]))
     }
 
     const courseId = courseDetail.data.courses[0].id
@@ -125,7 +127,7 @@ routes.post('/course/:courseShortName/enrol/teachers', async (req, res, next) =>
 
     if (!courseDetail.data.courses[0]) {
         res.statusCode = 404
-        return res.json({ error: 'Course not found' })
+        return res.json(response(null, [req.params.courseShortName], ["Course not found"]))
     }
 
     const courseId = courseDetail.data.courses[0].id
