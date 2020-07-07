@@ -177,6 +177,31 @@ routes.post('/course/:courseShortName/enrol/teachers', [
     res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
 })
 
+const unenrolUser = async (email, courseId) => {
+    const paramsUserDetail = new URLSearchParams()
+    paramsUserDetail.append('wstoken', MOODLE_TOKEN)
+    paramsUserDetail.append('wsfunction', 'core_user_get_users')
+    paramsUserDetail.append('moodlewsrestformat', MOODLE_FORMAT)
+    paramsUserDetail.append('criteria[0][key]', 'email')
+    paramsUserDetail.append('criteria[0][value]', email)
+
+    const userDetail = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsUserDetail)
+
+    if (!userDetail.data.users.length) {
+        return { error: "user not found" }
+    }
+
+    const paramsEnrolUser = new URLSearchParams()
+    paramsEnrolUser.append('wstoken', MOODLE_TOKEN)
+    paramsEnrolUser.append('wsfunction', 'enrol_manual_unenrol_users')
+    paramsEnrolUser.append('moodlewsrestformat', MOODLE_FORMAT)
+    paramsEnrolUser.append('enrolments[0][userid]', userDetail.data.users[0].id)
+    paramsEnrolUser.append('enrolments[0][courseid]', courseId)
+
+    const courseDetail = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsEnrolUser)
+    return { successes: "add user to course" }
+}
+
 const enrolUser = async (roleId, email, courseId) => {
     const paramsUserDetail = new URLSearchParams()
     paramsUserDetail.append('wstoken', MOODLE_TOKEN)
