@@ -224,6 +224,69 @@ routes.post('/course/:courseShortName/unenrol', [
     res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
 })
 
+routes.post('/course/:courseShortName/duplicate', [
+    check('fullName', 'fullName invalid').exists(),
+    check('shortName', 'shortName invalid').exists(),
+    check('categoryId', 'categoryid invalid').exists().isNumeric(),
+    check('startDate', 'startDate invalid').exists().isISO8601(),
+    check('stopDate', 'stopDate invalid').exists().isISO8601()
+], async (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return next(errorHandle(400, errors.mapped()))
+    }
+
+    const paramsCourseDetail = new URLSearchParams()
+    paramsCourseDetail.append('wstoken', MOODLE_TOKEN)
+    paramsCourseDetail.append('wsfunction', 'core_course_get_courses_by_field')
+    paramsCourseDetail.append('moodlewsrestformat', MOODLE_FORMAT)
+    paramsCourseDetail.append('field', 'shortname')
+    paramsCourseDetail.append('value', req.params.courseShortName)
+    
+
+    const courseDetail = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsCourseDetail)
+
+    if (!courseDetail.data.courses[0]) {
+        res.statusCode = 404
+        return res.json(response([], [req.params.courseShortName], ["Course not found"]))
+    }
+
+    const courseId = courseDetail.data.courses[0].id
+
+    const paramsDuplicateCourse = new URLSearchParams()
+    paramsDuplicateCourse.append('wstoken', MOODLE_TOKEN)
+    paramsDuplicateCourse.append('wsfunction', 'core_course_duplicate_course')
+    paramsDuplicateCourse.append('moodlewsrestformat', MOODLE_FORMAT)
+    paramsDuplicateCourse.append('courseid', courseId)
+    paramsDuplicateCourse.append('fullname', req.body.fullName)
+    paramsDuplicateCourse.append('shortname', req.body.shortName)
+    paramsDuplicateCourse.append('categoryid', req.body.categoryId)
+    paramsDuplicateCourse.append('options[0][name]', 'users')
+    paramsDuplicateCourse.append('options[0][value]', 0)
+
+    const duplicateCourse = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsDuplicateCourse)
+
+    if(duplicateCourse.data.exception) {
+        res.statusCode = 400
+        return res.json(response([], [req.body.shortName], [duplicateCourse.data]))
+    }
+
+    const startDate = moment(req.body.startDate, 'YYYY-MM-DD HH:mm:ss').unix()
+    const stopDate = moment(req.body.stopDate, 'YYYY-MM-DD HH:mm:ss').unix()
+
+    const paramsUpdateCoures = new URLSearchParams()
+    paramsUpdateCoures.append('wstoken', MOODLE_TOKEN)
+    paramsUpdateCoures.append('wsfunction', 'core_course_update_courses')
+    paramsUpdateCoures.append('moodlewsrestformat', MOODLE_FORMAT)
+    paramsUpdateCoures.append('courses[0][id]', duplicateCourse.data.id)
+    paramsUpdateCoures.append('courses[0][startdate]', startDate)
+    paramsUpdateCoures.append('courses[0][enddate]', stopDate)
+
+    const updateCoures = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsUpdateCoures)
+
+    res.json(response([{ courseId: duplicateCourse.data.id, shortName: duplicateCourse.data.shortname }], [], []))
+})
+
 const unenrolUser = async (email, courseId) => {
     const paramsUserDetail = new URLSearchParams()
     paramsUserDetail.append('wstoken', MOODLE_TOKEN)
