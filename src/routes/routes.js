@@ -33,14 +33,19 @@ const response = (successes, errors, errorDetails) => {
 routes.post(
     '/courses',
     [
-        check('fullName', 'invalid').exists(),
-        check('shortName', 'invalid').exists(),
-        check('catagoryId', 'invalid').exists(),
-        check('startDate', 'invalid').exists(),
-        check('stopDate', 'invalid').exists(),
-        check('lang', 'invalid').exists(),
+        check('fullName', 'fullName invalid').exists(),
+        check('shortName', 'shortName invalid').exists(),
+        check('catagoryId', 'catagoryId invalid').exists(),
+        check('startDate', 'startDate invalid use format YYYY-MM-DD HH:mm:ss').exists().isISO8601(),
+        check('stopDate', 'stopDate invalid use format YYYY-MM-DD HH:mm:ss').exists().isISO8601(),
+        check('lang', 'lang invalid use \'th\' or  \'en\'').exists(),
     ],
     async (req, res, next) => {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return next(errorHandle(400, errors.mapped()))
+        }
+
         const startDate = moment(req.body.startDate, 'YYYY-MM-DD HH:mm:ss').unix()
         const stopDate = moment(req.body.stopDate, 'YYYY-MM-DD HH:mm:ss').unix()
 
@@ -71,17 +76,21 @@ routes.post(
         paramsCreateCourse.append('courses[0][enablecompletion]', 1) // int
         paramsCreateCourse.append('courses[0][completionnotify]', 0) // int
         paramsCreateCourse.append('courses[0][lang]', req.body.lang) // string
-        // paramsCreateCourse.append('courses[0][forcetheme]', '') // string
-        // paramsCreateCourse.append('courses[0][courseformatoptions][0][name]', '') // string
-        // paramsCreateCourse.append('courses[0][courseformatoptions][0][value]', '') // string
-        // paramsCreateCourse.append('courses[0][customfields][0][shortname]', '') // string
-        // paramsCreateCourse.append('courses[0][customfields][0][value]', '') // string
         const data = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsCreateCourse)
-        res.json(data.data)
+        if (data.data.exception) {
+            res.json(response([], [req.body.shortName], [data.data]))
+        }
     },
 )
 
-routes.post('/course/:courseShortName/enrol/students', async (req, res, next) => {
+routes.post('/course/:courseShortName/enrol/students', [
+    check('user', 'user invalid, user field must be a array').exists().isArray()
+],async (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return next(errorHandle(400, errors.mapped()))
+    }
+
     const paramsCourseDetail = new URLSearchParams()
     paramsCourseDetail.append('wstoken', MOODLE_TOKEN)
     paramsCourseDetail.append('wsfunction', 'core_course_get_courses_by_field')
@@ -121,7 +130,14 @@ routes.post('/course/:courseShortName/enrol/students', async (req, res, next) =>
     res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
 })
 
-routes.post('/course/:courseShortName/enrol/teachers', async (req, res, next) => {
+routes.post('/course/:courseShortName/enrol/teachers', [
+    check('user', 'user invalid, user field must be a array').exists().isArray()
+], async (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return next(errorHandle(400, errors.mapped()))
+    }
+
     const paramsCourseDetail = new URLSearchParams()
     paramsCourseDetail.append('wstoken', MOODLE_TOKEN)
     paramsCourseDetail.append('wsfunction', 'core_course_get_courses_by_field')
