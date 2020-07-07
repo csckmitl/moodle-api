@@ -13,8 +13,12 @@ const API_BASE_URL = 'http://192.168.251.129/moodle'
 const errorHandle = (status, data) => {
     const err = new Error()
     err.status = status
-    err.error = data[Object.keys(data)[0]].msg
-    err.data = null
+    err.errors = []
+    err.errorDetails = []
+    for (const errData in data) {
+        err.errors.push(data[errData].param)
+        err.errorDetails.push(data[errData].msg)
+    }
     return err
 }
 
@@ -25,20 +29,6 @@ const response = (successes, errors, errorDetails) => {
         errorDetails: errorDetails
     }
 }
-
-routes.get('/', [check('test', 'invalid').exists()], async (req, res, next) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-        return next(errorHandle(400, errors.mapped()))
-    }
-
-    const params = new URLSearchParams()
-    params.append('wstoken', MOODLE_TOKEN)
-    params.append('wsfunction', 'core_course_get_courses')
-    params.append('moodlewsrestformat', MOODLE_FORMAT)
-    const data = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, params)
-    res.json(data.data)
-})
 
 routes.post(
     '/courses',
@@ -108,11 +98,27 @@ routes.post('/course/:courseShortName/enrol/students', async (req, res, next) =>
 
     const courseId = courseDetail.data.courses[0].id
 
-    req.body.user.forEach(email => {
-        enrolUser(5, email, courseId)
-    })
+    const detail = await Promise.all(req.body.user.map(async email => {
+        const enrolRes = await enrolUser(5, email, courseId)
+        return { email: email, detail: enrolRes }
+    }))
 
-    res.json({ message: 'enrol all students' })
+    let dataRes = {
+        successes: [],
+        errors: [],
+        errorDetails: []
+    }
+
+    for(let i = 0; i < detail.length; i++) {
+        if (detail[i].detail.successes) {
+            dataRes.successes.push(detail[i].email)
+        } else {
+            dataRes.errors.push(detail[i].email)
+            dataRes.errorDetails.push("User not found")
+        }
+    }
+
+    res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
 })
 
 routes.post('/course/:courseShortName/enrol/teachers', async (req, res, next) => {
@@ -127,16 +133,32 @@ routes.post('/course/:courseShortName/enrol/teachers', async (req, res, next) =>
 
     if (!courseDetail.data.courses[0]) {
         res.statusCode = 404
-        return res.json(response(null, [req.params.courseShortName], ["Course not found"]))
+        return res.json(response([], [req.params.courseShortName], ["Course not found"]))
     }
 
     const courseId = courseDetail.data.courses[0].id
 
-    req.body.user.forEach(email => {
-        enrolUser(3, email, courseId)
-    })
+    const detail = await Promise.all(req.body.user.map(async email => {
+        const enrolRes = await enrolUser(3, email, courseId)
+        return { email: email, detail: enrolRes }
+    }))
 
-    res.json({ message: 'enrol all teachers' })
+    let dataRes = {
+        successes: [],
+        errors: [],
+        errorDetails: []
+    }
+
+    for(let i = 0; i < detail.length; i++) {
+        if (detail[i].detail.successes) {
+            dataRes.successes.push(detail[i].email)
+        } else {
+            dataRes.errors.push(detail[i].email)
+            dataRes.errorDetails.push("User not found")
+        }
+    }
+
+    res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
 })
 
 const enrolUser = async (roleId, email, courseId) => {
@@ -148,7 +170,10 @@ const enrolUser = async (roleId, email, courseId) => {
     paramsUserDetail.append('criteria[0][value]', email)
 
     const userDetail = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsUserDetail)
-    // console.log(userDetail.data.users[0].id)
+
+    if (!userDetail.data.users.length) {
+        return { error: "user not found" }
+    }
 
     const paramsEnrolUser = new URLSearchParams()
     paramsEnrolUser.append('wstoken', MOODLE_TOKEN)
@@ -159,6 +184,7 @@ const enrolUser = async (roleId, email, courseId) => {
     paramsEnrolUser.append('enrolments[0][courseid]', courseId)
 
     const courseDetail = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsEnrolUser)
+    return { successes: "add user to course" }
 }
 
 export default routes
