@@ -177,6 +177,53 @@ routes.post('/course/:courseShortName/enrol/teachers', [
     res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
 })
 
+routes.post('/course/:courseShortName/unenrol', [
+    check('user', 'user invalid, user field must be a array').exists().isArray()
+], async (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return next(errorHandle(400, errors.mapped()))
+    }
+
+    const paramsCourseDetail = new URLSearchParams()
+    paramsCourseDetail.append('wstoken', MOODLE_TOKEN)
+    paramsCourseDetail.append('wsfunction', 'core_course_get_courses_by_field')
+    paramsCourseDetail.append('moodlewsrestformat', MOODLE_FORMAT)
+    paramsCourseDetail.append('field', 'shortname')
+    paramsCourseDetail.append('value', req.params.courseShortName)
+
+    const courseDetail = await axios.post(`${API_BASE_URL}/webservice/rest/server.php`, paramsCourseDetail)
+
+    if (!courseDetail.data.courses[0]) {
+        res.statusCode = 404
+        return res.json(response([], [req.params.courseShortName], ["Course not found"]))
+    }
+
+    const courseId = courseDetail.data.courses[0].id
+
+    const detail = await Promise.all(req.body.user.map(async email => {
+        const enrolRes = await unenrolUser(email, courseId)
+        return { email: email, detail: enrolRes }
+    }))
+
+    let dataRes = {
+        successes: [],
+        errors: [],
+        errorDetails: []
+    }
+
+    for(let i = 0; i < detail.length; i++) {
+        if (detail[i].detail.successes) {
+            dataRes.successes.push(detail[i].email)
+        } else {
+            dataRes.errors.push(detail[i].email)
+            dataRes.errorDetails.push("User not found")
+        }
+    }
+
+    res.json(response(dataRes.successes, dataRes.errors, dataRes.errorDetails))
+})
+
 const unenrolUser = async (email, courseId) => {
     const paramsUserDetail = new URLSearchParams()
     paramsUserDetail.append('wstoken', MOODLE_TOKEN)
